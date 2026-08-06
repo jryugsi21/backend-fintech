@@ -1,0 +1,43 @@
+// Configura la generación de Prisma Client para TypeScript.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+// Indica que utilizaremos PostgreSQL.
+datasource db {
+  provider = "postgresql"
+}
+
+// Valores permitidos para identificar el tipo de movimiento.
+enum TipoMovimiento {
+  INGRESO
+  GASTO
+}
+
+// MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB
+model Categoria {
+  // Identificador principal y se incrementa automáticamente.
+  id Int @id @default(autoincrement())
+
+  // Nombre visible de la categoría con límite de caracteres en 100
+  nombre String @db.VarChar(100)
+
+  // Determina si se utiliza para ingresos o gastos.
+  tipo TipoMovimiento
+
+  // Permite desactivar una categoría sin eliminarla.
+  activa Boolean @default(true)
+
+  // Fecha de creación del registro.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Se actualiza automáticamente cuando cambia el registro.
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // Impide repetir un mismo nombre para el mismo tipo.
+  @@unique([nombre, tipo])
+  // La tabla en PostgreSQL se llamará "categorias".
+  @@map("categorias")
+}

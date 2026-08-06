@@ -18,6 +18,7 @@ async function bootstrap() {
   // Todos los endpoints comenzarán con /api.
   app.setGlobalPrefix('api');
 
+  //Este bloque activa la validación automática de los datos recibidos en los endpoints del backend.//
   // Aplicamos la validación a todos los endpoints del backend.
   app.useGlobalPipes(
     new ValidationPipe({

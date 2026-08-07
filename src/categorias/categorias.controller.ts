@@ -17,14 +17,18 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiBearerAuth,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 
 import { CategoriasService } from './categorias.service';
 import { ActualizarCategoriaDto } from './dto/actualizar-categoria.dto';
 import { ActualizarEstadoCategoriaDto } from './dto/actualizar-estado-categoria.dto';
 import { CrearCategoriaDto } from './dto/crear-categoria.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Categorías')
+@ApiBearerAuth('access-token')
 @Controller('categorias')
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
@@ -67,6 +71,10 @@ export class CategoriasController {
 
   // POST /api/categorias
   @Post()
+  @Roles('ADMINISTRADOR')
+  @ApiForbiddenResponse({
+    description: 'El usuario no tiene permisos de administrador',
+  })
   @ApiOperation({
     summary: 'Crear una nueva categoría',
   })
@@ -85,6 +93,10 @@ export class CategoriasController {
 
   // PATCH /api/categorias/1/estado
   @Patch(':id/estado')
+  @Roles('ADMINISTRADOR')
+  @ApiForbiddenResponse({
+    description: 'El usuario no tiene permisos de administrador',
+  })
   @ApiOperation({
     summary: 'Activar o desactivar una categoría',
   })
@@ -112,6 +124,10 @@ export class CategoriasController {
 
   // PATCH /api/categorias/1
   @Patch(':id')
+  @Roles('ADMINISTRADOR')
+  @ApiForbiddenResponse({
+    description: 'El usuario no tiene permisos de administrador',
+  })
   @ApiOperation({
     summary: 'Actualizar parcialmente una categoría',
   })

@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { CategoriasModule } from './categorias/categorias.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,14 +17,10 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
-    // Habilita la conexión con Prisma.
     PrismaModule,
-
-    // Habilita las funcionalidades de categorías.
     CategoriasModule,
-
     UsuariosModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -40,6 +40,16 @@ async function bootstrap() {
       'Documentación de los endpoints del backend de la aplicación FinTech',
     )
     .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description:
+          'Pega únicamente el accessToken obtenido al iniciar sesión',
+      },
+      'access-token',
+    )
     .build();
 
   // Swagger examina los controladores y genera la documentación.

@@ -1,7 +1,7 @@
 // Configura la generación de Prisma Client para TypeScript.
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
@@ -16,12 +16,18 @@ enum TipoMovimiento {
   GASTO
 }
 
+// Roles permitidos dentro del sistema.
+enum RolUsuario {
+  USUARIO
+  ADMINISTRADOR
+}
+
 // MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB
 model Categoria {
   // Identificador principal y se incrementa automáticamente.
   id Int @id @default(autoincrement())
 
-  // Nombre visible de la categoría con límite de caracteres en 100
+  // Nombre visible de la categoría.
   nombre String @db.VarChar(100)
 
   // Determina si se utiliza para ingresos o gastos.
@@ -38,6 +44,36 @@ model Categoria {
 
   // Impide repetir un mismo nombre para el mismo tipo.
   @@unique([nombre, tipo])
-  // La tabla en PostgreSQL se llamará "categorias".
+  // Nombre real de la tabla en PostgreSQL.
   @@map("categorias")
+}
+
+// MODELO DE LOS DATOS DE UN USUARIO EN LA DB
+model Usuario {
+  // Identificador principal generado automáticamente.
+  id Int @id @default(autoincrement())
+
+  // Nombre de la persona.
+  nombre String @db.VarChar(100)
+
+  // Correo utilizado para registrarse e iniciar sesión.
+  correo String @unique @db.VarChar(150)
+
+  // Contendrá la contraseña cifrada, nunca la contraseña original.
+  contrasenaHash String @map("contrasena_hash") @db.VarChar(255)
+
+  // Define los permisos del usuario.
+  rol RolUsuario @default(USUARIO)
+
+  // Permite bloquear una cuenta sin eliminarla.
+  activo Boolean @default(true)
+
+  // Fecha en que se registró el usuario.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Fecha de la última modificación.
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("usuarios")
 }

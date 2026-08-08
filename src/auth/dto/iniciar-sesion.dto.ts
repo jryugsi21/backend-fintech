@@ -1,21 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { Transform, type TransformFnParams } from 'class-transformer';
+import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class IniciarSesionDto {
   @ApiProperty({
     description: 'Correo electrónico del usuario',
     example: 'jorge@correo.com',
   })
-  @Transform(({ value }) =>
-    typeof value === 'string'
-      ? value.trim().toLowerCase()
-      : value,
+  @Transform(({ value }: TransformFnParams): string =>
+    typeof value === 'string' ? value.trim().toLowerCase() : '',
   )
   @IsEmail(
     {},

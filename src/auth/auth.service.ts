@@ -21,17 +21,11 @@ export class AuthService {
   ) {}
 
   // Registra un usuario nuevo.
-  async registrar(
-    registrarUsuarioDto: RegistrarUsuarioDto,
-  ) {
-    const correoNormalizado = registrarUsuarioDto.correo
-      .trim()
-      .toLowerCase();
+  async registrar(registrarUsuarioDto: RegistrarUsuarioDto) {
+    const correoNormalizado = registrarUsuarioDto.correo.trim().toLowerCase();
 
     const usuarioExistente =
-      await this.usuariosService.buscarPorCorreo(
-        correoNormalizado,
-      );
+      await this.usuariosService.buscarPorCorreo(correoNormalizado);
 
     if (usuarioExistente) {
       throw new ConflictException(
@@ -45,9 +39,7 @@ export class AuthService {
     );
 
     const usuario = await this.usuariosService.crear({
-      nombre: registrarUsuarioDto.nombre
-        .trim()
-        .replace(/\s+/g, ' '),
+      nombre: registrarUsuarioDto.nombre.trim().replace(/\s+/g, ' '),
       correo: correoNormalizado,
       contrasenaHash,
     });
@@ -59,24 +51,16 @@ export class AuthService {
   }
 
   // Comprueba las credenciales y genera un token JWT.
-  async iniciarSesion(
-    iniciarSesionDto: IniciarSesionDto,
-  ) {
-    const correoNormalizado = iniciarSesionDto.correo
-      .trim()
-      .toLowerCase();
+  async iniciarSesion(iniciarSesionDto: IniciarSesionDto) {
+    const correoNormalizado = iniciarSesionDto.correo.trim().toLowerCase();
 
     const usuario =
-      await this.usuariosService.buscarPorCorreo(
-        correoNormalizado,
-      );
+      await this.usuariosService.buscarPorCorreo(correoNormalizado);
 
     // Se utiliza el mismo mensaje para no revelar
     // si el correo existe o si la contraseña fue incorrecta.
     if (!usuario) {
-      throw new UnauthorizedException(
-        'Correo o contraseña incorrectos',
-      );
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
     const contrasenaCorrecta = await bcrypt.compare(
@@ -85,15 +69,11 @@ export class AuthService {
     );
 
     if (!contrasenaCorrecta) {
-      throw new UnauthorizedException(
-        'Correo o contraseña incorrectos',
-      );
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
     if (!usuario.activo) {
-      throw new ForbiddenException(
-        'La cuenta se encuentra desactivada',
-      );
+      throw new ForbiddenException('La cuenta se encuentra desactivada');
     }
 
     // Información que se guardará dentro del token.
@@ -103,8 +83,7 @@ export class AuthService {
       rol: usuario.rol,
     };
 
-    const accessToken =
-      await this.jwtService.signAsync(contenidoToken);
+    const accessToken = await this.jwtService.signAsync(contenidoToken);
 
     return {
       mensaje: 'Inicio de sesión correcto',

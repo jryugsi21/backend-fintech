@@ -42,6 +42,9 @@ model Categoria {
   // Se actualiza automáticamente cuando cambia el registro.
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
+  // Relación movimientos
+  movimientos Movimiento[]
+
   // Impide repetir un mismo nombre para el mismo tipo.
   @@unique([nombre, tipo])
   // Nombre real de la tabla en PostgreSQL.
@@ -50,7 +53,7 @@ model Categoria {
 
 // MODELO DE LOS DATOS DE UN USUARIO EN LA DB
 model Usuario {
-  // Identificador principal generado automáticamente.
+  // Identificador principal.
   id Int @id @default(autoincrement())
 
   // Nombre de la persona.
@@ -74,6 +77,61 @@ model Usuario {
   // Fecha de la última modificación.
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
+  // Relación movimientos
+  movimientos Movimiento[]
+
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
+}
+
+// MODELO DE DATOS DE UN MOVIMIENTO
+model Movimiento {
+  // Identificador principal.
+  id Int @id @default(autoincrement())
+
+  // Indica si el movimiento es un INGRESO o un GASTO.
+  tipo TipoMovimiento
+
+  // Valor económico del movimiento, permite hasta 12 dígitos y 2 decimales.
+  monto Decimal @db.Decimal(12, 2)
+
+  // Información adicional sobre el movimiento ("?" significa opcional)
+  descripcion String? @db.VarChar(255)
+
+  // Fecha en que se realizó movimiento, si no se envía una fecha se utiliza la actual.
+  fecha DateTime @default(now())
+
+  // Fecha en la que se realizó la eliminación lógica.
+  eliminadoEn DateTime? @map("eliminado_en")
+
+  // CLAVES FORÁNEAS
+  usuarioId   Int @map("usuario_id") // Id del usuario al que pertenece el movimiento.
+  // Identificador de la categoría asociada al movimiento.
+  categoriaId Int @map("categoria_id") // Id de la categoría asociada al movimiento.
+
+  // Fecha en la que se creó este registro en la base de datos.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Fecha de la última modificación realizada al registro.
+  // Prisma la actualiza automáticamente.
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // RELACIONES DE MOVIMIENTOS CON USUARIO Y CATEGORÍAS.
+  // Relación con usuarios.
+  // Indica que usuarioId debe corresponder al id de un usuario existente.
+  // Restrict evita eliminar un usuario si todavía tiene movimientos relacionados.
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  // Relación con categoría.
+  // Indica que categoriaId debe corresponder al id de una categoría existente.
+  // Restrict evita eliminar una categoría si tiene movimientos relacionados.
+  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  // Crea índice utilizando usuarioId y fecha, ayuda a realizar más rápido consultas como:
+  // "Obtener los movimientos de un usuario ordenados o filtrados por fecha".
+  @@index([usuarioId, fecha])
+  // Crea índice para categoriaId y ayuda a buscar más rápido los movimientos pertenecientes a una categoría.
+  @@index([categoriaId])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("movimientos")
 }

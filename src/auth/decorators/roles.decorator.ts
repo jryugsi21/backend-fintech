@@ -1,8 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
 
-import type {
-  UsuarioAutenticado,
-} from '../interfaces/usuario-autenticado.interface';
+import type { UsuarioAutenticado } from '../interfaces/usuario-autenticado.interface';
 
 // Nombre utilizado para guardar los roles requeridos.
 export const CLAVE_ROLES = 'rolesPermitidos';

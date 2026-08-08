@@ -21,25 +21,15 @@ import {
 } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import {
-  Publico,
-} from './decorators/publico.decorator';
-import {
-  IniciarSesionDto,
-} from './dto/iniciar-sesion.dto';
-import {
-  RegistrarUsuarioDto,
-} from './dto/registrar-usuario.dto';
-import type {
-  SolicitudAutenticada,
-} from './interfaces/usuario-autenticado.interface';
+import { Publico } from './decorators/publico.decorator';
+import { IniciarSesionDto } from './dto/iniciar-sesion.dto';
+import { RegistrarUsuarioDto } from './dto/registrar-usuario.dto';
+import type { SolicitudAutenticada } from './interfaces/usuario-autenticado.interface';
 
 @ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   // POST /api/auth/registro
   @Publico()
@@ -51,20 +41,16 @@ export class AuthController {
     description: 'Usuario registrado correctamente',
   })
   @ApiBadRequestResponse({
-    description:
-      'Los datos enviados no cumplen las validaciones',
+    description: 'Los datos enviados no cumplen las validaciones',
   })
   @ApiConflictResponse({
-    description:
-      'Ya existe un usuario con ese correo',
+    description: 'Ya existe un usuario con ese correo',
   })
   registrar(
     @Body()
     registrarUsuarioDto: RegistrarUsuarioDto,
   ) {
-    return this.authService.registrar(
-      registrarUsuarioDto,
-    );
+    return this.authService.registrar(registrarUsuarioDto);
   }
 
   // POST /api/auth/login
@@ -78,8 +64,7 @@ export class AuthController {
     description: 'Inicio de sesión correcto',
   })
   @ApiBadRequestResponse({
-    description:
-      'Los datos enviados no cumplen las validaciones',
+    description: 'Los datos enviados no cumplen las validaciones',
   })
   @ApiUnauthorizedResponse({
     description: 'Correo o contraseña incorrectos',
@@ -91,9 +76,7 @@ export class AuthController {
     @Body()
     iniciarSesionDto: IniciarSesionDto,
   ) {
-    return this.authService.iniciarSesion(
-      iniciarSesionDto,
-    );
+    return this.authService.iniciarSesion(iniciarSesionDto);
   }
 
   // GET /api/auth/perfil
@@ -106,12 +89,9 @@ export class AuthController {
     description: 'El token es válido',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
-  obtenerPerfil(
-    @Req() solicitud: SolicitudAutenticada,
-  ) {
+  obtenerPerfil(@Req() solicitud: SolicitudAutenticada) {
     return {
       mensaje: 'Token válido',
       usuario: {

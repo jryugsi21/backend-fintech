@@ -25,7 +25,6 @@ export class UsuariosService {
   // Guarda un usuario nuevo sin devolver su contraseña hash.
   async crear(datos: DatosNuevoUsuario) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return await this.prismaService.usuario.create({
         data: {
           nombre: datos.nombre,

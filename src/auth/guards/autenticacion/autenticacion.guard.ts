@@ -21,39 +21,29 @@ export class AutenticacionGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
-  async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     // Revisa si el controlador o endpoint tiene @Publico().
-    const esRutaPublica =
-      this.reflector.getAllAndOverride<boolean>(
-        CLAVE_RUTA_PUBLICA,
-        [context.getHandler(), context.getClass()],
-      );
+    const esRutaPublica = this.reflector.getAllAndOverride<boolean>(
+      CLAVE_RUTA_PUBLICA,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (esRutaPublica) {
       return true;
     }
 
-    const solicitud =
-      context
-        .switchToHttp()
-        .getRequest<SolicitudAutenticada>();
+    const solicitud = context.switchToHttp().getRequest<SolicitudAutenticada>();
 
     const token = this.extraerToken(solicitud);
 
     if (!token) {
-      throw new UnauthorizedException(
-        'Debes enviar un token de autenticación',
-      );
+      throw new UnauthorizedException('Debes enviar un token de autenticación');
     }
 
     try {
       // Comprueba la firma y la fecha de expiración.
       const contenidoToken =
-        await this.jwtService.verifyAsync<UsuarioAutenticado>(
-          token,
-        );
+        await this.jwtService.verifyAsync<UsuarioAutenticado>(token);
 
       // Comprueba que el token tenga la información esperada.
       if (
@@ -69,25 +59,18 @@ export class AutenticacionGuard implements CanActivate {
 
       return true;
     } catch {
-      throw new UnauthorizedException(
-        'El token es inválido o ha expirado',
-      );
+      throw new UnauthorizedException('El token es inválido o ha expirado');
     }
   }
 
-  private extraerToken(
-    solicitud: Request,
-  ): string | undefined {
-    const autorizacion =
-      solicitud.headers.authorization;
+  private extraerToken(solicitud: Request): string | undefined {
+    const autorizacion = solicitud.headers.authorization;
 
     if (!autorizacion) {
       return undefined;
     }
 
-    const [tipo, token] = autorizacion
-      .trim()
-      .split(/\s+/);
+    const [tipo, token] = autorizacion.trim().split(/\s+/);
 
     if (tipo?.toLowerCase() !== 'bearer') {
       return undefined;

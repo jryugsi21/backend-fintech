@@ -10,6 +10,7 @@ import { CategoriasModule } from './categorias/categorias.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
+import { MovimientosModule } from './movimientos/movimientos.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from './auth/auth.module';
     CategoriasModule,
     UsuariosModule,
     AuthModule,
+    MovimientosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

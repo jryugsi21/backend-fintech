@@ -22,6 +22,16 @@ enum RolUsuario {
   ADMINISTRADOR
 }
 
+// Tipos de alertas del sistema
+enum TipoNotificacion {
+  ALERTA_PRESUPUESTO
+  META_AHORRO
+  RECORDATORIO_PAGO
+  RECORDATORIO_MOVIMIENTO
+  RECOMENDACION_IA
+  SISTEMA
+}
+
 // ---------- MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB ----------
 model Categoria {
   // Identificador principal y se incrementa automáticamente.
@@ -91,6 +101,9 @@ model Usuario {
   // Metas creadas por el usuario.
   metasAhorro MetaAhorro[]
 
+  // Notificaciones para el usuario
+  notificaciones Notificacion[]
+
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
 }
@@ -148,7 +161,7 @@ model Movimiento {
   @@map("movimientos")
 }
 
-// ---------- MODELO DE LOS PRESUPUESTOS MENSUALES -----------
+// ---------- MODELO DE DATOS DE PRESUPUESTOS MENSUALES -----------
 model Presupuesto {
   // Identificador principal generado automáticamente.
   id Int @id @default(autoincrement())
@@ -189,7 +202,7 @@ model Presupuesto {
   @@map("presupuestos")
 }
 
-// ---------- MODELO DE UNA META DE AHORRO ----------
+// ---------- MODELO DE DATOS DE UNA META DE AHORRO ----------
 model MetaAhorro {
   // Identificador principal de la meta.
   id Int @id @default(autoincrement())
@@ -228,7 +241,7 @@ model MetaAhorro {
   @@map("metas_ahorro")
 }
 
-// ---------- MODELO DE UN APORTE A UNA META ----------
+// ---------- MODELO DE DATOS DE UN APORTE A UNA META ----------
 model AporteMeta {
   // Identificador principal del aporte.
   id Int @id @default(autoincrement())
@@ -254,4 +267,56 @@ model AporteMeta {
   @@index([metaAhorroId, eliminadoEn, creadoEn])
   // Nombre real de la tabla en PostgreSQL.
   @@map("aportes_meta")
+}
+
+// ---------- MODELO DE DATOS DE NOTIFICACIONES PARA PRESUPUESTOS Y METAS ----------
+// (Quedan preparados tipos para módulos posteriores: Recordatorios de pago, recordatorios de movimientos, recomendaciones de Gemini, avisos generales del sistema.)
+
+model Notificacion {
+  // Identificador principal de la notificación.
+  id Int @id @default(autoincrement())
+
+  // Título que tendrá la notificación.
+  titulo String @db.VarChar(120)
+
+  // Contenido o información que se mostrará al usuario.
+  mensaje String @db.VarChar(500)
+
+  // Indica qué tipo de notificación es.
+  tipo TipoNotificacion
+
+  // Guarda una referencia opcional para identificar qué originó la notificación.
+  referencia String? @db.VarChar(150)
+
+  // Indica si el usuario ya leyó la notificación.
+  leida Boolean @default(false)
+
+  // Guarda la fecha y hora en la que el usuario leyó la notificación.
+  leidaEn DateTime? @map("leida_en")
+
+  // Fecha en la que se realizó la eliminación lógica de la notificación.
+  eliminadoEn DateTime? @map("eliminado_en")
+
+  // Fecha en la que se creó la notificación.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // ----- Clave foránea -----
+  // Id del usuario al que pertenece la notificación.
+  usuarioId Int @map("usuario_id")
+
+  // ----- Relaciones -----
+  // Relación con usuarios.
+  // Indica que usuarioId debe corresponder al id de un usuario existente.
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Impide repetir una misma referencia para un mismo usuario.
+  @@unique([usuarioId, referencia])
+  // Crea un índice para facilitar la búsqueda de notificaciones.
+  // de un usuario según su estado de eliminación y fecha de creación.
+  @@index([usuarioId, eliminadoEn, creadoEn])
+  // Crea un índice para facilitar la búsqueda de notificaciones
+  // leídas o no leídas que todavía no hayan sido eliminadas.
+  @@index([usuarioId, leida, eliminadoEn])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("notificaciones")
 }

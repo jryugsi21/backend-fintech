@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { MovimientosModule } from './movimientos/movimientos.module';
 import { PresupuestosModule } from './presupuestos/presupuestos.module';
 import { MetasAhorroModule } from './metas-ahorro/metas-ahorro.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MetasAhorroModule } from './metas-ahorro/metas-ahorro.module';
     MovimientosModule,
     PresupuestosModule,
     MetasAhorroModule,
+    NotificacionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

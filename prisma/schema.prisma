@@ -22,7 +22,7 @@ enum RolUsuario {
   ADMINISTRADOR
 }
 
-// MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB
+// ---------- MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB ----------
 model Categoria {
   // Identificador principal y se incrementa automáticamente.
   id Int @id @default(autoincrement())
@@ -42,8 +42,12 @@ model Categoria {
   // Se actualiza automáticamente cuando cambia el registro.
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  // Relación movimientos
+  // ----- Relaciones ------
+  // Relación movimientos de una categoría.
   movimientos Movimiento[]
+
+  // Presupuestos asociados con esta categoría.
+  presupuestos Presupuesto[]
 
   // Impide repetir un mismo nombre para el mismo tipo.
   @@unique([nombre, tipo])
@@ -51,7 +55,7 @@ model Categoria {
   @@map("categorias")
 }
 
-// MODELO DE LOS DATOS DE UN USUARIO EN LA DB
+// ---------- MODELO DE LOS DATOS DE UN USUARIO ----------
 model Usuario {
   // Identificador principal.
   id Int @id @default(autoincrement())
@@ -77,14 +81,18 @@ model Usuario {
   // Fecha de la última modificación.
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  // Relación movimientos
+  // -----RELACIONES-----
+  // Relación movimientos creados por el usuario.
   movimientos Movimiento[]
+
+  // Presupuestos creados por el usuario.
+  presupuestos Presupuesto[]
 
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
 }
 
-// MODELO DE DATOS DE UN MOVIMIENTO
+// ---------- MODELO DE DATOS DE UN MOVIMIENTO -----------
 model Movimiento {
   // Identificador principal.
   id Int @id @default(autoincrement())
@@ -104,10 +112,11 @@ model Movimiento {
   // Fecha en la que se realizó la eliminación lógica.
   eliminadoEn DateTime? @map("eliminado_en")
 
-  // CLAVES FORÁNEAS
-  usuarioId   Int @map("usuario_id") // Id del usuario al que pertenece el movimiento.
+  // ----- Claves foráneas -----
+  usuarioId Int @map("usuario_id") //Id del usuario al que pertenece el movimiento.
+
   // Identificador de la categoría asociada al movimiento.
-  categoriaId Int @map("categoria_id") // Id de la categoría asociada al movimiento.
+  categoriaId Int @map("categoria_id") //Id de la categoría asociada al movimiento.
 
   // Fecha en la que se creó este registro en la base de datos.
   creadoEn DateTime @default(now()) @map("creado_en")
@@ -116,7 +125,7 @@ model Movimiento {
   // Prisma la actualiza automáticamente.
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
-  // RELACIONES DE MOVIMIENTOS CON USUARIO Y CATEGORÍAS.
+  // ----- Relaciones de movimientos con usuarios y categorías ------
   // Relación con usuarios.
   // Indica que usuarioId debe corresponder al id de un usuario existente.
   // Restrict evita eliminar un usuario si todavía tiene movimientos relacionados.
@@ -134,4 +143,45 @@ model Movimiento {
   @@index([categoriaId])
   // Nombre real de la tabla en PostgreSQL.
   @@map("movimientos")
+}
+
+// ---------- MODELO DE LOS PRESUPUESTOS MENSUALES -----------
+model Presupuesto {
+  // Identificador principal generado automáticamente.
+  id Int @id @default(autoincrement())
+
+  // Cantidad máxima que el usuario desea gastar.
+  montoLimite Decimal @map("monto_limite") @db.Decimal(12, 2)
+
+  // Mes correspondiente al presupuesto, desde 1 hasta 12.
+  mes Int
+
+  // Año correspondiente al presupuesto.
+  anio Int
+
+  // Porcentaje de consumo en el que se deberá generar una alerta.
+  porcentajeAlerta Int @default(80) @map("porcentaje_alerta")
+
+  // Indica si el presupuesto continúa habilitado.
+  activo Boolean @default(true)
+
+  // Fechas de control interno del registro.
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // ------ Claves foráneas ------
+  usuarioId   Int @map("usuario_id")
+  categoriaId Int @map("categoria_id")
+
+  // ----- Relaciones ------
+  // Un presupuesto pertenece a un usuario y a una categoría.
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  // Impide presupuestos repetidos para la misma categoría y periodo.
+  @@unique([usuarioId, categoriaId, anio, mes])
+  // Mejoran las búsquedas por usuario, periodo y categoría.
+  @@index([usuarioId, anio, mes, activo])
+  @@index([categoriaId])
+  @@map("presupuestos")
 }

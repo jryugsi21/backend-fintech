@@ -11,6 +11,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { MovimientosModule } from './movimientos/movimientos.module';
+import { PresupuestosModule } from './presupuestos/presupuestos.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MovimientosModule } from './movimientos/movimientos.module';
     UsuariosModule,
     AuthModule,
     MovimientosModule,
+    PresupuestosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

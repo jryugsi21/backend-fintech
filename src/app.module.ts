@@ -12,6 +12,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { MovimientosModule } from './movimientos/movimientos.module';
 import { PresupuestosModule } from './presupuestos/presupuestos.module';
+import { MetasAhorroModule } from './metas-ahorro/metas-ahorro.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PresupuestosModule } from './presupuestos/presupuestos.module';
     AuthModule,
     MovimientosModule,
     PresupuestosModule,
+    MetasAhorroModule,
   ],
   controllers: [AppController],
   providers: [AppService],

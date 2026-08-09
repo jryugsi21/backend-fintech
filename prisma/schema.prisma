@@ -82,11 +82,14 @@ model Usuario {
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
   // -----RELACIONES-----
-  // Relación movimientos creados por el usuario.
+  // Movimientos creados por el usuario.
   movimientos Movimiento[]
 
   // Presupuestos creados por el usuario.
   presupuestos Presupuesto[]
+
+  // Metas creadas por el usuario.
+  metasAhorro MetaAhorro[]
 
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
@@ -184,4 +187,71 @@ model Presupuesto {
   @@index([usuarioId, anio, mes, activo])
   @@index([categoriaId])
   @@map("presupuestos")
+}
+
+// ---------- MODELO DE UNA META DE AHORRO ----------
+model MetaAhorro {
+  // Identificador principal de la meta.
+  id Int @id @default(autoincrement())
+
+  // Nombre que el usuario le da a su meta.
+  nombre String @db.VarChar(100)
+
+  // Cantidad de dinero que el usuario quiere alcanzar.
+  montoObjetivo Decimal @map("monto_objetivo") @db.Decimal(12, 2)
+
+  // Fecha límite o fecha esperada para cumplir la meta.
+  fechaObjetivo DateTime @map("fecha_objetivo") @db.Date
+
+  // Indica si la meta sigue activa.
+  activo Boolean @default(true)
+
+  // Fecha en la que se creó la meta.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Fecha de la última modificación de la meta.
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // ----- Clave foránea -----
+  usuarioId Int @map("usuario_id")
+
+  // ----- Relaciones -----
+  // Relación con usuarios.
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Relación con aportes.
+  aportes AporteMeta[]
+
+  // Crea un índice para facilitar búsquedas de metas
+  @@index([usuarioId, activo, fechaObjetivo])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("metas_ahorro")
+}
+
+// ---------- MODELO DE UN APORTE A UNA META ----------
+model AporteMeta {
+  // Identificador principal del aporte.
+  id Int @id @default(autoincrement())
+
+  // Cantidad de dinero aportada a la meta.
+  monto Decimal @db.Decimal(12, 2)
+
+  // Fecha en la que se registró el aporte.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Fecha en la que el aporte fue eliminado de forma lógica.
+  eliminadoEn DateTime? @map("eliminado_en")
+
+  // ----- Clave foránea -----
+  // Id de la meta de ahorro a la que pertenece este aporte.
+  metaAhorroId Int @map("meta_ahorro_id")
+
+  // ----- Relaciones -----
+  // Relación coon MetaAhorro.
+  metaAhorro MetaAhorro @relation(fields: [metaAhorroId], references: [id], onDelete: Cascade)
+
+  // Crea un índice para hacer más rápidas las consultas
+  @@index([metaAhorroId, eliminadoEn, creadoEn])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("aportes_meta")
 }

@@ -31,38 +31,26 @@ import { NotificacionesService } from './notificaciones.service';
 @ApiBearerAuth('access-token')
 @Controller('notificaciones')
 export class NotificacionesController {
-  constructor(
-    private readonly notificacionesService:
-      NotificacionesService,
-  ) {}
+  constructor(private readonly notificacionesService: NotificacionesService) {}
 
   @Post('sincronizar')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary:
-      'Generar las alertas actuales del usuario autenticado',
+    summary: 'Generar las alertas actuales del usuario autenticado',
   })
   @ApiOkResponse({
-    description:
-      'Alertas sincronizadas correctamente',
+    description: 'Alertas sincronizadas correctamente',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
-  sincronizar(
-    @Req() solicitud: SolicitudAutenticada,
-  ) {
-    return this.notificacionesService
-      .sincronizarAlertas(
-        solicitud.usuario.sub,
-      );
+  sincronizar(@Req() solicitud: SolicitudAutenticada) {
+    return this.notificacionesService.sincronizarAlertas(solicitud.usuario.sub);
   }
 
   @Get()
   @ApiOperation({
-    summary:
-      'Consultar las notificaciones internas del usuario',
+    summary: 'Consultar las notificaciones internas del usuario',
   })
   @ApiQuery({
     name: 'soloNoLeidas',
@@ -71,129 +59,106 @@ export class NotificacionesController {
     example: true,
   })
   @ApiOkResponse({
-    description:
-      'Notificaciones obtenidas correctamente',
+    description: 'Notificaciones obtenidas correctamente',
   })
   @ApiBadRequestResponse({
-    description:
-      'El filtro enviado no es válido',
+    description: 'El filtro enviado no es válido',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
   listar(
     @Req() solicitud: SolicitudAutenticada,
     @Query()
     filtros: ListarNotificacionesDto,
   ) {
-    return this.notificacionesService
-      .listarDelUsuario(
-        solicitud.usuario.sub,
-        filtros,
-      );
+    return this.notificacionesService.listarDelUsuario(
+      solicitud.usuario.sub,
+      filtros,
+    );
   }
 
   @Patch('leer-todas')
   @ApiOperation({
-    summary:
-      'Marcar todas las notificaciones como leídas',
+    summary: 'Marcar todas las notificaciones como leídas',
   })
   @ApiOkResponse({
-    description:
-      'Notificaciones marcadas como leídas',
+    description: 'Notificaciones marcadas como leídas',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
-  marcarTodasComoLeidas(
-    @Req() solicitud: SolicitudAutenticada,
-  ) {
-    return this.notificacionesService
-      .marcarTodasComoLeidas(
-        solicitud.usuario.sub,
-      );
+  marcarTodasComoLeidas(@Req() solicitud: SolicitudAutenticada) {
+    return this.notificacionesService.marcarTodasComoLeidas(
+      solicitud.usuario.sub,
+    );
   }
 
   @Patch(':id/leer')
   @ApiOperation({
-    summary:
-      'Marcar una notificación propia como leída',
+    summary: 'Marcar una notificación propia como leída',
   })
   @ApiParam({
     name: 'id',
-    description:
-      'Identificador de la notificación',
+    description: 'Identificador de la notificación',
     example: 1,
     type: Number,
   })
   @ApiOkResponse({
-    description:
-      'Notificación marcada como leída',
+    description: 'Notificación marcada como leída',
   })
   @ApiBadRequestResponse({
-    description:
-      'El identificador no es válido',
+    description: 'El identificador no es válido',
   })
   @ApiNotFoundResponse({
-    description:
-      'La notificación no existe o pertenece a otro usuario',
+    description: 'La notificación no existe o pertenece a otro usuario',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
   marcarComoLeida(
     @Req() solicitud: SolicitudAutenticada,
     @Param('id', ParseIntPipe)
     notificacionId: number,
   ) {
-    return this.notificacionesService
-      .marcarComoLeida(
-        solicitud.usuario.sub,
-        notificacionId,
-      );
+    return this.notificacionesService.marcarComoLeida(
+      solicitud.usuario.sub,
+      notificacionId,
+    );
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary:
-      'Eliminar lógicamente una notificación propia',
+    summary: 'Eliminar lógicamente una notificación propia',
   })
   @ApiParam({
     name: 'id',
-    description:
-      'Identificador de la notificación',
+    description: 'Identificador de la notificación',
     example: 1,
     type: Number,
   })
   @ApiOkResponse({
-    description:
-      'Notificación eliminada correctamente',
+    description: 'Notificación eliminada correctamente',
   })
   @ApiBadRequestResponse({
-    description:
-      'El identificador no es válido',
+    description: 'El identificador no es válido',
   })
   @ApiNotFoundResponse({
     description:
       'La notificación no existe, ya fue eliminada o pertenece a otro usuario',
   })
   @ApiUnauthorizedResponse({
-    description:
-      'El token falta, es inválido o ha expirado',
+    description: 'El token falta, es inválido o ha expirado',
   })
   eliminar(
     @Req() solicitud: SolicitudAutenticada,
     @Param('id', ParseIntPipe)
     notificacionId: number,
   ) {
-    return this.notificacionesService
-      .eliminar(
-        solicitud.usuario.sub,
-        notificacionId,
-      );
+    return this.notificacionesService.eliminar(
+      solicitud.usuario.sub,
+      notificacionId,
+    );
   }
 }

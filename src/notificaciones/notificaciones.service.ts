@@ -17,7 +17,7 @@ export interface CrearNotificacionInterna {
   referencia: string;
 }
 
-interface NotificacionPendiente extends CrearNotificacionInterna {}
+type NotificacionPendiente = CrearNotificacionInterna;
 
 @Injectable()
 export class NotificacionesService {

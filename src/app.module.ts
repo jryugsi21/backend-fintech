@@ -14,6 +14,7 @@ import { MovimientosModule } from './movimientos/movimientos.module';
 import { PresupuestosModule } from './presupuestos/presupuestos.module';
 import { MetasAhorroModule } from './metas-ahorro/metas-ahorro.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { NotificacionesModule } from './notificaciones/notificaciones.module';
     PresupuestosModule,
     MetasAhorroModule,
     NotificacionesModule,
+    ReportesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

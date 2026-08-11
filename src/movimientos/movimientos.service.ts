@@ -51,7 +51,7 @@ export class MovimientosService {
         monto: crearMovimientoDto.monto,
         descripcion: crearMovimientoDto.descripcion ?? null,
         fecha: crearMovimientoDto.fecha
-          ? new Date(crearMovimientoDto.fecha)
+          ? this.convertirFechaMovimiento(crearMovimientoDto.fecha)
           : new Date(),
         usuarioId,
         categoriaId: crearMovimientoDto.categoriaId,
@@ -263,7 +263,9 @@ export class MovimientosService {
 
         ...(actualizarMovimientoDto.fecha !== undefined
           ? {
-              fecha: new Date(actualizarMovimientoDto.fecha),
+              fecha: this.convertirFechaMovimiento(
+                actualizarMovimientoDto.fecha,
+              ),
             }
           : {}),
       },
@@ -356,6 +358,10 @@ export class MovimientosService {
         `La categoría seleccionada pertenece al tipo ${categoria.tipo}`,
       );
     }
+  }
+
+  private convertirFechaMovimiento(fecha: string): Date {
+    return new Date(`${fecha}T00:00:00.000${DESFASE_HORARIO_APLICACION}`);
   }
 
   private convertirFechaInicial(fecha: string): Date {

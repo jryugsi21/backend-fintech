@@ -44,6 +44,79 @@ enum OrigenRespuestaAsistente {
   MOTOR_REGLAS
 }
 
+// Tipos de contribuyentes que podrán configurar su información tributaria.
+enum TipoContribuyente {
+  PERSONA_NATURAL
+  SOCIEDAD
+}
+
+// Regímenes tributarios contemplados inicialmente por el sistema.
+enum RegimenTributario {
+  GENERAL
+  RIMPE_NEGOCIO_POPULAR
+  RIMPE_EMPRENDEDOR
+}
+
+// Ambientes disponibles para conectarse con los servicios del SRI.
+enum AmbienteSri {
+  PRUEBAS
+  PRODUCCION
+}
+
+// Tipos de identificación admitidos por una factura electrónica del SRI.
+enum TipoIdentificacionSri {
+  RUC
+  CEDULA
+  PASAPORTE
+  CONSUMIDOR_FINAL
+  IDENTIFICACION_EXTERIOR
+}
+
+// Tarifas habilitadas inicialmente en el catálogo de productos.
+// Se empieza con 0 % y 15 % para no asignar tasas especiales sin respaldo.
+enum TarifaIvaProducto {
+  CERO
+  QUINCE
+}
+
+// Estados internos que permiten controlar el ciclo de una factura.
+enum EstadoFactura {
+  BORRADOR
+  FIRMADA
+  RECIBIDA
+  AUTORIZADA
+  DEVUELTA
+  NO_AUTORIZADA
+  ANULADA_LOCAL
+  ERROR
+}
+
+// Forma en que una categoría financiera participa en el cálculo tributario.
+enum TratamientoTributarioMovimiento {
+  INGRESO_GRAVADO
+  INGRESO_EXENTO
+  COSTO_GASTO_DEDUCIBLE
+  GASTO_PERSONAL
+  NO_DEDUCIBLE
+  IGNORAR
+}
+
+// Rubros reconocidos para la rebaja por gastos personales.
+enum CategoriaGastoPersonal {
+  VIVIENDA
+  ALIMENTACION
+  SALUD
+  EDUCACION_ARTE_CULTURA
+  VESTIMENTA
+  TURISMO
+}
+
+// Impuesto al que corresponde una retención recibida.
+enum TipoRetencionRecibida {
+  RENTA
+  IVA
+}
+
 // ---------- MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB ----------
 model Categoria {
   // Identificador principal y se incrementa automáticamente.
@@ -118,6 +191,9 @@ model Usuario {
 
   // Conversaciones del usuario con el asistente financiero.
   conversacionesAsistente ConversacionAsistente[]
+
+  // Configuración tributaria utilizada para emitir comprobantes electrónicos.
+  perfilTributario PerfilTributario?
 
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
@@ -402,4 +478,288 @@ model MensajeAsistente {
   @@index([conversacionId, creadoEn])
   // Nombre real de la tabla en PostgreSQL.
   @@map("mensajes_asistente")
+}
+
+// ---------- MODELO DE DATOS DEL PERFIL TRIBUTARIO ----------
+model PerfilTributario {
+  // Identificador principal del perfil tributario.
+  id Int @id @default(autoincrement())
+
+  // Número de RUC del contribuyente que emitirá los comprobantes.
+  ruc String @unique @db.VarChar(13)
+
+  // Nombre legal del contribuyente registrado en el SRI.
+  razonSocial String @map("razon_social") @db.VarChar(300)
+
+  // Nombre comercial utilizado por el contribuyente, si dispone de uno.
+  nombreComercial String? @map("nombre_comercial") @db.VarChar(300)
+
+  // Dirección principal registrada para el contribuyente.
+  direccionMatriz String @map("direccion_matriz") @db.VarChar(300)
+
+  // Indica si el contribuyente es una persona natural o una sociedad.
+  tipoContribuyente TipoContribuyente @map("tipo_contribuyente")
+
+  // Régimen tributario con el que se realizarán los cálculos posteriores.
+  regimenTributario RegimenTributario @default(GENERAL) @map("regimen_tributario")
+
+  // Indica si el contribuyente está obligado a llevar contabilidad.
+  obligadoContabilidad Boolean @default(false) @map("obligado_contabilidad")
+
+  // Código asignado por el SRI cuando el emisor es contribuyente especial.
+  codigoContribuyenteEspecial String? @map("codigo_contribuyente_especial") @db.VarChar(20)
+
+  // Código asignado por el SRI cuando el emisor es agente de retención.
+  codigoAgenteRetencion String? @map("codigo_agente_retencion") @db.VarChar(20)
+
+  // Código de tres dígitos del establecimiento desde el cual se emitirá.
+  establecimiento String @default("001") @db.VarChar(3)
+
+  // Código de tres dígitos del punto de emisión.
+  puntoEmision String @default("001") @map("punto_emision") @db.VarChar(3)
+
+  // Ambiente del SRI utilizado para enviar los comprobantes.
+  ambienteSri AmbienteSri @default(PRUEBAS) @map("ambiente_sri")
+
+  // Permite desactivar la configuración sin eliminar su información.
+  activo Boolean @default(true)
+
+  // Fechas de control interno.
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // ----- Clave foránea -----
+  usuarioId Int @unique @map("usuario_id")
+
+  // ----- Relaciones -----
+  usuario                   Usuario                            @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  firmaElectronica          FirmaElectronica?
+  clientes                  ClienteFacturacion[]
+  productosServicios        ProductoServicioFacturacion[]
+  facturas                  FacturaElectronica[]
+  secuencias                SecuenciaComprobante[]
+  configuracionesCategorias ConfiguracionCategoriaTributaria[]
+  retencionesRecibidas      RetencionRecibida[]
+
+  @@map("perfiles_tributarios")
+}
+
+// ---------- MODELO DE DATOS DE LA FIRMA ELECTRÓNICA ----------
+model FirmaElectronica {
+  // Identificador principal.
+  id Int @id @default(autoincrement())
+
+  // Credencial extraída del archivo P12 y cifrada con AES-256-GCM.
+  credencialCifrada     Bytes @map("credencial_cifrada")
+  vectorInicializacion  Bytes @map("vector_inicializacion")
+  etiquetaAutenticacion Bytes @map("etiqueta_autenticacion")
+
+  // Metadatos no secretos del certificado.
+  nombreArchivo     String   @map("nombre_archivo") @db.VarChar(255)
+  numeroSerie       String   @map("numero_serie") @db.VarChar(200)
+  emisorCertificado String   @map("emisor_certificado") @db.VarChar(500)
+  tipoClave         String   @map("tipo_clave") @db.VarChar(10)
+  validoHasta       DateTime @map("valido_hasta")
+  activo            Boolean  @default(true)
+
+  // Fechas de control interno.
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // ----- Clave foránea y relación -----
+  perfilTributarioId Int              @unique @map("perfil_tributario_id")
+  perfilTributario   PerfilTributario @relation(fields: [perfilTributarioId], references: [id], onDelete: Cascade)
+
+  @@map("firmas_electronicas")
+}
+
+// ---------- MODELO DE DATOS DE UN CLIENTE DE FACTURACIÓN ----------
+model ClienteFacturacion {
+  id                 Int                   @id @default(autoincrement())
+  tipoIdentificacion TipoIdentificacionSri @map("tipo_identificacion")
+  identificacion     String                @db.VarChar(20)
+  razonSocial        String                @map("razon_social") @db.VarChar(300)
+  correo             String?               @db.VarChar(150)
+  direccion          String?               @db.VarChar(300)
+  telefono           String?               @db.VarChar(30)
+  activo             Boolean               @default(true)
+  creadoEn           DateTime              @default(now()) @map("creado_en")
+  actualizadoEn      DateTime              @updatedAt @map("actualizado_en")
+
+  perfilTributarioId Int                  @map("perfil_tributario_id")
+  perfilTributario   PerfilTributario     @relation(fields: [perfilTributarioId], references: [id], onDelete: Restrict)
+  facturas           FacturaElectronica[]
+
+  @@unique([perfilTributarioId, identificacion])
+  @@index([perfilTributarioId, activo, razonSocial])
+  @@map("clientes_facturacion")
+}
+
+// ---------- MODELO DE DATOS DE UN PRODUCTO O SERVICIO ----------
+model ProductoServicioFacturacion {
+  id              Int               @id @default(autoincrement())
+  codigoPrincipal String            @map("codigo_principal") @db.VarChar(25)
+  descripcion     String            @db.VarChar(300)
+  precioUnitario  Decimal           @map("precio_unitario") @db.Decimal(14, 6)
+  tarifaIva       TarifaIvaProducto @map("tarifa_iva")
+  activo          Boolean           @default(true)
+  creadoEn        DateTime          @default(now()) @map("creado_en")
+  actualizadoEn   DateTime          @updatedAt @map("actualizado_en")
+
+  perfilTributarioId Int                         @map("perfil_tributario_id")
+  perfilTributario   PerfilTributario            @relation(fields: [perfilTributarioId], references: [id], onDelete: Restrict)
+  detallesFactura    DetalleFacturaElectronica[]
+
+  @@unique([perfilTributarioId, codigoPrincipal])
+  @@index([perfilTributarioId, activo, descripcion])
+  @@map("productos_servicios_facturacion")
+}
+
+// ---------- MODELO DE DATOS DE UNA FACTURA ELECTRÓNICA ----------
+model FacturaElectronica {
+  id     Int           @id @default(autoincrement())
+  estado EstadoFactura @default(BORRADOR)
+
+  // Numeración y clave asignadas cuando se inicia la emisión.
+  establecimiento String  @db.VarChar(3)
+  puntoEmision    String  @map("punto_emision") @db.VarChar(3)
+  secuencial      Int?
+  claveAcceso     String? @unique @map("clave_acceso") @db.VarChar(49)
+
+  // Datos generales y forma de pago del comprobante.
+  fechaEmision DateTime @map("fecha_emision")
+  formaPago    String   @default("20") @map("forma_pago") @db.VarChar(2)
+  observacion  String?  @db.VarChar(300)
+
+  // Copia inmutable de los datos del emisor y comprador al facturar.
+  emisorRuc                         String                @map("emisor_ruc") @db.VarChar(13)
+  emisorRazonSocial                 String                @map("emisor_razon_social") @db.VarChar(300)
+  emisorNombreComercial             String?               @map("emisor_nombre_comercial") @db.VarChar(300)
+  emisorDireccionMatriz             String                @map("emisor_direccion_matriz") @db.VarChar(300)
+  emisorRegimenTributario           RegimenTributario     @map("emisor_regimen_tributario")
+  emisorObligadoContabilidad        Boolean               @map("emisor_obligado_contabilidad")
+  emisorCodigoContribuyenteEspecial String?               @map("emisor_codigo_contribuyente_especial") @db.VarChar(20)
+  emisorCodigoAgenteRetencion       String?               @map("emisor_codigo_agente_retencion") @db.VarChar(20)
+  emisorAmbienteSri                 AmbienteSri           @map("emisor_ambiente_sri")
+  compradorTipoIdentificacion       TipoIdentificacionSri @map("comprador_tipo_identificacion")
+  compradorIdentificacion           String                @map("comprador_identificacion") @db.VarChar(20)
+  compradorRazonSocial              String                @map("comprador_razon_social") @db.VarChar(300)
+  compradorCorreo                   String?               @map("comprador_correo") @db.VarChar(150)
+  compradorDireccion                String?               @map("comprador_direccion") @db.VarChar(300)
+
+  // Totales calculados por el servidor; el cliente no los decide.
+  subtotalCero      Decimal @default(0) @map("subtotal_cero") @db.Decimal(14, 2)
+  subtotalQuince    Decimal @default(0) @map("subtotal_quince") @db.Decimal(14, 2)
+  totalSinImpuestos Decimal @map("total_sin_impuestos") @db.Decimal(14, 2)
+  totalDescuento    Decimal @default(0) @map("total_descuento") @db.Decimal(14, 2)
+  iva               Decimal @default(0) @db.Decimal(14, 2)
+  importeTotal      Decimal @map("importe_total") @db.Decimal(14, 2)
+
+  // Evidencias del proceso electrónico ante el SRI.
+  xmlFirmado         String?   @map("xml_firmado") @db.Text
+  xmlAutorizado      String?   @map("xml_autorizado") @db.Text
+  numeroAutorizacion String?   @unique @map("numero_autorizacion") @db.VarChar(49)
+  fechaAutorizacion  DateTime? @map("fecha_autorizacion")
+  mensajesSri        Json?     @map("mensajes_sri")
+  ultimoIntentoSri   DateTime? @map("ultimo_intento_sri")
+  eliminadoEn        DateTime? @map("eliminado_en")
+  creadoEn           DateTime  @default(now()) @map("creado_en")
+  actualizadoEn      DateTime  @updatedAt @map("actualizado_en")
+
+  // ----- Claves foráneas y relaciones -----
+  perfilTributarioId   Int                         @map("perfil_tributario_id")
+  clienteId            Int                         @map("cliente_id")
+  perfilTributario     PerfilTributario            @relation(fields: [perfilTributarioId], references: [id], onDelete: Restrict)
+  cliente              ClienteFacturacion          @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  detalles             DetalleFacturaElectronica[]
+  retencionesRecibidas RetencionRecibida[]
+
+  @@unique([perfilTributarioId, establecimiento, puntoEmision, secuencial])
+  @@index([perfilTributarioId, estado, fechaEmision])
+  @@index([clienteId])
+  @@map("facturas_electronicas")
+}
+
+// ---------- MODELO DE DATOS DE UN DETALLE DE FACTURA ----------
+model DetalleFacturaElectronica {
+  id              Int               @id @default(autoincrement())
+  codigoPrincipal String            @map("codigo_principal") @db.VarChar(25)
+  descripcion     String            @db.VarChar(300)
+  cantidad        Decimal           @db.Decimal(14, 6)
+  precioUnitario  Decimal           @map("precio_unitario") @db.Decimal(14, 6)
+  descuento       Decimal           @default(0) @db.Decimal(14, 2)
+  tarifaIva       TarifaIvaProducto @map("tarifa_iva")
+  baseImponible   Decimal           @map("base_imponible") @db.Decimal(14, 2)
+  valorIva        Decimal           @map("valor_iva") @db.Decimal(14, 2)
+  total           Decimal           @db.Decimal(14, 2)
+
+  facturaId          Int                         @map("factura_id")
+  productoServicioId Int                         @map("producto_servicio_id")
+  factura            FacturaElectronica          @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  productoServicio   ProductoServicioFacturacion @relation(fields: [productoServicioId], references: [id], onDelete: Restrict)
+
+  @@index([facturaId])
+  @@index([productoServicioId])
+  @@map("detalles_facturas_electronicas")
+}
+
+// ---------- MODELO DE CONTROL DE SECUENCIALES ----------
+model SecuenciaComprobante {
+  id                  Int      @id @default(autoincrement())
+  codigoDocumento     String   @map("codigo_documento") @db.VarChar(2)
+  establecimiento     String   @db.VarChar(3)
+  puntoEmision        String   @map("punto_emision") @db.VarChar(3)
+  siguienteSecuencial Int      @default(1) @map("siguiente_secuencial")
+  actualizadoEn       DateTime @updatedAt @map("actualizado_en")
+
+  perfilTributarioId Int              @map("perfil_tributario_id")
+  perfilTributario   PerfilTributario @relation(fields: [perfilTributarioId], references: [id], onDelete: Restrict)
+
+  @@unique([perfilTributarioId, codigoDocumento, establecimiento, puntoEmision])
+  @@map("secuencias_comprobantes")
+}
+
+// ---------- CONFIGURACIÓN FINTECH → TRIBUTACIÓN ----------
+model ConfiguracionCategoriaTributaria {
+  id                     Int                             @id @default(autoincrement())
+  categoriaId            Int                             @map("categoria_id")
+  tratamiento            TratamientoTributarioMovimiento
+  categoriaGastoPersonal CategoriaGastoPersonal?         @map("categoria_gasto_personal")
+  creadoEn               DateTime                        @default(now()) @map("creado_en")
+  actualizadoEn          DateTime                        @updatedAt @map("actualizado_en")
+
+  perfilTributarioId Int              @map("perfil_tributario_id")
+  perfilTributario   PerfilTributario @relation(fields: [perfilTributarioId], references: [id], onDelete: Cascade)
+
+  // categoriaId referencia conceptualmente a Categoria, pero se mantiene sin
+  // relación Prisma para no modificar el módulo existente de categorías.
+  @@unique([perfilTributarioId, categoriaId])
+  @@index([perfilTributarioId, tratamiento])
+  @@map("configuraciones_categorias_tributarias")
+}
+
+// ---------- RETENCIONES ENTREGADAS POR CLIENTES ----------
+model RetencionRecibida {
+  id                   Int                   @id @default(autoincrement())
+  tipo                 TipoRetencionRecibida
+  emisorIdentificacion String                @map("emisor_identificacion") @db.VarChar(20)
+  numeroComprobante    String                @map("numero_comprobante") @db.VarChar(50)
+  fechaEmision         DateTime              @map("fecha_emision")
+  baseImponible        Decimal               @map("base_imponible") @db.Decimal(14, 2)
+  porcentaje           Decimal               @db.Decimal(7, 4)
+  valor                Decimal               @db.Decimal(14, 2)
+  observacion          String?               @db.VarChar(300)
+  activo               Boolean               @default(true)
+  creadoEn             DateTime              @default(now()) @map("creado_en")
+  actualizadoEn        DateTime              @updatedAt @map("actualizado_en")
+
+  perfilTributarioId Int                 @map("perfil_tributario_id")
+  facturaId          Int?                @map("factura_id")
+  perfilTributario   PerfilTributario    @relation(fields: [perfilTributarioId], references: [id], onDelete: Restrict)
+  factura            FacturaElectronica? @relation(fields: [facturaId], references: [id], onDelete: Restrict)
+
+  @@unique([perfilTributarioId, emisorIdentificacion, numeroComprobante])
+  @@index([perfilTributarioId, tipo, fechaEmision, activo])
+  @@index([facturaId])
+  @@map("retenciones_recibidas")
 }

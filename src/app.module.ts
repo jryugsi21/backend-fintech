@@ -15,6 +15,7 @@ import { PresupuestosModule } from './presupuestos/presupuestos.module';
 import { MetasAhorroModule } from './metas-ahorro/metas-ahorro.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { AsistenteIaModule } from './asistente-ia/asistente-ia.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ReportesModule } from './reportes/reportes.module';
     MetasAhorroModule,
     NotificacionesModule,
     ReportesModule,
+    AsistenteIaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

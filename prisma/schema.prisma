@@ -32,6 +32,18 @@ enum TipoNotificacion {
   SISTEMA
 }
 
+// Roles permitidos para identificar quién envió el mensaje.
+enum RolMensajeAsistente {
+  USUARIO
+  ASISTENTE
+}
+
+// Orígenes permitidos para las respuestas generadas por el asistente.
+enum OrigenRespuestaAsistente {
+  GEMINI
+  MOTOR_REGLAS
+}
+
 // ---------- MODELO DE LOS DATOS DE UNA CATEGORÍA EN LA DB ----------
 model Categoria {
   // Identificador principal y se incrementa automáticamente.
@@ -103,6 +115,9 @@ model Usuario {
 
   // Notificaciones para el usuario
   notificaciones Notificacion[]
+
+  // Conversaciones del usuario con el asistente financiero.
+  conversacionesAsistente ConversacionAsistente[]
 
   // Nombre real de la tabla en PostgreSQL.
   @@map("usuarios")
@@ -319,4 +334,72 @@ model Notificacion {
   @@index([usuarioId, leida, eliminadoEn])
   // Nombre real de la tabla en PostgreSQL.
   @@map("notificaciones")
+}
+
+// ---------- MODELO DE DATOS DE UNA CONVERSACIÓN CON EL ASISTENTE ----------
+model ConversacionAsistente {
+  // Identificador principal de la conversación.
+  id Int @id @default(autoincrement())
+
+  // Nombre breve que permitirá identificar la conversación en el historial.
+  titulo String @db.VarChar(120)
+
+  // Fecha en la que la conversación fue eliminada de forma lógica.
+  eliminadoEn DateTime? @map("eliminado_en")
+
+  // Fecha en la que se creó la conversación.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // Fecha de la última modificación o actividad de la conversación.
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  // ----- Clave foránea -----
+  // Id del usuario propietario de la conversación.
+  usuarioId Int @map("usuario_id")
+
+  // ----- Relaciones -----
+  // Relación con usuarios.
+  // Indica que usuarioId debe corresponder al id de un usuario existente.
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Mensajes que pertenecen a esta conversación.
+  mensajes MensajeAsistente[]
+
+  // Facilita la búsqueda del historial activo de un usuario.
+  @@index([usuarioId, eliminadoEn, actualizadoEn])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("conversaciones_asistente")
+}
+
+// ---------- MODELO DE DATOS DE UN MENSAJE DEL ASISTENTE ----------
+model MensajeAsistente {
+  // Identificador principal del mensaje.
+  id Int @id @default(autoincrement())
+
+  // Indica si el mensaje fue enviado por el usuario o por el asistente.
+  rol RolMensajeAsistente
+
+  // Contenido completo de la pregunta o respuesta.
+  contenido String @db.Text
+
+  // Indica si la respuesta fue generada por Gemini o por el motor local.
+  // Es opcional porque los mensajes enviados por el usuario no tienen un origen.
+  origenRespuesta OrigenRespuestaAsistente? @map("origen_respuesta")
+
+  // Fecha en la que se guardó el mensaje.
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  // ----- Clave foránea -----
+  // Id de la conversación a la que pertenece el mensaje.
+  conversacionId Int @map("conversacion_id")
+
+  // ----- Relaciones -----
+  // Relación con conversaciones.
+  // Al eliminar físicamente una conversación también se eliminan sus mensajes.
+  conversacion ConversacionAsistente @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+
+  // Facilita la consulta de los mensajes en orden cronológico.
+  @@index([conversacionId, creadoEn])
+  // Nombre real de la tabla en PostgreSQL.
+  @@map("mensajes_asistente")
 }

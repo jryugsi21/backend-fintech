@@ -8,5 +8,6 @@ import { PresupuestosService } from './presupuestos.service';
   imports: [PrismaModule],
   controllers: [PresupuestosController],
   providers: [PresupuestosService],
+  exports: [PresupuestosService],
 })
 export class PresupuestosModule {}
